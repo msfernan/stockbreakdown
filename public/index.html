@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fund Manifest — ETF holdings lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F0F1EA;
+    --card: #FFFFFF;
+    --ink: #1C2321;
+    --ink-soft: #565F52;
+    --ink-faint: #8B8F80;
+    --line: #D9D6C7;
+    --accent: #B6461F;
+    --accent-soft: #F3DED2;
+    --teal: #2F6E5E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 48px 24px 80px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .eyebrow::before { content: ''; width: 18px; height: 1px; background: var(--accent); display: inline-block; }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 1.08;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .sub { font-size: 16px; color: var(--ink-soft); max-width: 46ch; line-height: 1.55; margin: 0 0 36px; }
+  .search-panel { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+  .search-row { display: flex; gap: 10px; }
+  #ticker-input {
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+  }
+  #ticker-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  #ticker-input::placeholder { color: var(--ink-faint); font-weight: 400; }
+  #search-btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 22px;
+    border: none;
+    border-radius: 3px;
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    min-width: 110px;
+  }
+  #search-btn:hover { opacity: 0.85; }
+  #search-btn:disabled { opacity: 0.5; cursor: default; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .stamp { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; margin-bottom: 32px; padding-left: 2px; }
+  .stamp b { color: var(--ink-soft); }
+  .error-box { display: none; background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent); padding: 18px 20px; border-radius: 3px; margin-bottom: 20px; }
+  .error-box .title { font-weight: 600; margin-bottom: 4px; }
+  .error-box .body { color: var(--ink-soft); font-size: 14px; line-height: 1.5; }
+  #results { display: none; }
+  .fund-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .fund-name { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; margin: 0 0 4px; }
+  .fund-meta { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-soft); }
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; margin-bottom: 28px; }
+  .stat { background: var(--card); padding: 14px 16px; }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 6px; }
+  .stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; }
+  .manifest-label { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); padding: 0 4px 8px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+  .holding-row { display: grid; grid-template-columns: 28px 70px 1fr 130px 60px; align-items: center; gap: 14px; padding: 13px 4px; border-bottom: 1px solid var(--line); }
+  .holding-row:last-child { border-bottom: none; }
+  .h-rank { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-faint); }
+  .h-ticker { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 14px; }
+  .h-name { font-size: 14px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .h-bar-track { height: 6px; background: var(--paper); border-radius: 3px; overflow: hidden; }
+  .h-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+  .h-weight { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; text-align: right; }
+  .footnote { margin-top: 24px; font-size: 12px; color: var(--ink-faint); line-height: 1.6; border-top: 1px solid var(--line); padding-top: 16px; }
+  .footnote code { background: var(--paper); padding: 1px 5px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; }
+  .spin {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--paper);
+    border-top-color: var(--paper); border-right-color: transparent; border-radius: 50%;
+    animation: spin 0.7s linear infinite; vertical-align: -2px; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 520px) {
+    .holding-row { grid-template-columns: 20px 56px 1fr 46px; }
+    .h-bar-track { display: none; }
+    .stat-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Fund manifest</div>
+  <h1>What's actually inside this ETF?</h1>
+  <p class="sub">Type a ticker to see the cargo — the individual stocks a fund holds, and how much weight each one carries.</p>
+
+  <div class="search-panel">
+    <div class="search-row">
+      <input id="ticker-input" type="text" placeholder="e.g. SPY" maxlength="6" autocomplete="off" spellcheck="false">
+      <button id="search-btn">Look up</button>
+    </div>
+    <div class="chip-row" id="chip-row"></div>
+  </div>
+
+  <div class="stamp">Live data via Financial Modeling Prep &middot; cached 1hr per ticker</div>
+
+  <div class="error-box" id="error-box">
+    <div class="title" id="error-title"></div>
+    <div class="body" id="error-body"></div>
+  </div>
+
+  <div id="results">
+    <div class="fund-header">
+      <div>
+        <div class="fund-name" id="fund-name"></div>
+        <div class="fund-meta" id="fund-meta"></div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-label">Holdings shown</div>
+        <div class="stat-value" id="stat-count"></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Top 10 weight</div>
+        <div class="stat-value" id="stat-concentration"></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Category</div>
+        <div class="stat-value" id="stat-category"></div>
+      </div>
+    </div>
+
+    <div class="manifest-label">
+      <span>Cargo — top holdings</span>
+      <span>Weight</span>
+    </div>
+    <div id="holding-list"></div>
+
+    <div class="footnote">
+      Data from the Financial Modeling Prep API via a local backend at <code>/api/holdings</code>, so your API key never reaches the browser.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const QUICK_TICKERS = ['SPY', 'QQQ', 'VOO', 'DIA', 'XLK', 'ARKK'];
+const chipRow = document.getElementById('chip-row');
+QUICK_TICKERS.forEach(sym => {
+  const chip = document.createElement('button');
+  chip.className = 'chip';
+  chip.textContent = sym;
+  chip.addEventListener('click', () => {
+    document.getElementById('ticker-input').value = sym;
+    runSearch();
+  });
+  chipRow.appendChild(chip);
+});
+
+const input = document.getElementById('ticker-input');
+const btn = document.getElementById('search-btn');
+const results = document.getElementById('results');
+const errorBox = document.getElementById('error-box');
+
+async function runSearch() {
+  const raw = input.value.trim().toUpperCase();
+  errorBox.style.display = 'none';
+  results.style.display = 'none';
+
+  if (!raw) {
+    showError('Type a ticker', 'Enter an ETF ticker symbol above, or pick one of the quick options.');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const resp = await fetch('/api/holdings?ticker=' + encodeURIComponent(raw));
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showError(data.error || 'Lookup failed', data.message || 'Something went wrong.');
+      return;
+    }
+
+    renderFund(data);
+  } catch (err) {
+    showError('Network error', 'Couldn\u2019t reach the local server. Is it running? Run "npm start" in the project folder.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function setLoading(isLoading) {
+  btn.disabled = isLoading;
+  btn.innerHTML = isLoading ? '<span class="spin"></span>Looking up' : 'Look up';
+}
+
+function showError(title, body) {
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-body').textContent = body;
+  errorBox.style.display = 'block';
+}
+
+function renderFund(fund) {
+  document.getElementById('fund-name').textContent = fund.symbol + (fund.name ? ' \u2014 ' + fund.name : '');
+  document.getElementById('fund-meta').textContent = fund.category || '';
+  document.getElementById('stat-count').textContent = fund.holdings.length;
+
+  const top10 = fund.holdings.slice(0, 10).reduce((sum, h) => sum + h.w, 0);
+  document.getElementById('stat-concentration').textContent = top10.toFixed(1) + '%';
+  document.getElementById('stat-category').textContent = fund.category ? fund.category.split(',')[0].trim() : '\u2014';
+
+  const maxWeight = Math.max(...fund.holdings.map(h => h.w), 0.01);
+  const list = document.getElementById('holding-list');
+  list.innerHTML = '';
+
+  fund.holdings.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.className = 'holding-row';
+    row.innerHTML = `
+      <div class="h-rank">${i + 1}</div>
+      <div class="h-ticker">${escapeHtml(h.t)}</div>
+      <div class="h-name">${escapeHtml(h.n)}</div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:${(h.w / maxWeight * 100).toFixed(0)}%"></div></div>
+      <div class="h-weight">${h.w.toFixed(2)}%</div>
+    `;
+    list.appendChild(row);
+  });
+
+  results.style.display = 'block';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+btn.addEventListener('click', runSearch);
+input.addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+</script>
+</body>
+</html>
