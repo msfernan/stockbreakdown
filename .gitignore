@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.swp
+.DS_Store
+.claude/
+data/*
+!data/.gitkeep
