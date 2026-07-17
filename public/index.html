@@ -17,6 +17,18 @@
     --accent: #B6461F;
     --accent-soft: #F3DED2;
     --teal: #2F6E5E;
+    /* Categorical palette for the exposure pie -- validated (CVD-safe, fixed
+       order, never cycled). "Other" gets a neutral gray, not a 7th hue. */
+    --pie-1: #2a78d6;
+    --pie-2: #1baf7a;
+    --pie-3: #eda100;
+    --pie-4: #008300;
+    --pie-5: #4a3aa7;
+    --pie-6: #e34948;
+    --pie-other: #A8A99C;
+    /* Reserved status colors (gain/loss) -- never reused as a categorical hue. */
+    --status-good: #0ca30c;
+    --status-critical: #d03b3b;
   }
   * { box-sizing: border-box; }
   body {
@@ -108,7 +120,10 @@
   .stat { background: var(--card); padding: 14px 16px; }
   .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 6px; }
   .stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; }
+  .stat-value.good { color: var(--status-good); }
+  .stat-value.critical { color: var(--status-critical); }
   .manifest-label { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); padding: 0 4px 8px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+  .section-note { font-size: 12px; color: var(--ink-faint); margin: 8px 4px 0; line-height: 1.5; }
   .holding-row { display: grid; grid-template-columns: 28px 70px 1fr 130px 60px; align-items: center; gap: 14px; padding: 13px 4px; border-bottom: 1px solid var(--line); }
   .holding-row:last-child { border-bottom: none; }
   .h-rank { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-faint); }
@@ -130,6 +145,203 @@
     .h-bar-track { display: none; }
     .stat-row { grid-template-columns: 1fr; }
   }
+
+  .section-divider {
+    margin: 56px 0 32px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+  }
+  .section-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .section-eyebrow::before { content: ''; width: 18px; height: 1px; background: var(--teal); display: inline-block; }
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 28px;
+    line-height: 1.1;
+    margin: 0 0 10px;
+  }
+  .section-sub { font-size: 15px; color: var(--ink-soft); max-width: 52ch; line-height: 1.55; margin: 0 0 24px; }
+
+  .add-position-panel { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+  .add-row { display: grid; grid-template-columns: 90px 110px 1fr auto; gap: 10px; align-items: stretch; }
+  select#pos-type, #pos-symbol, #pos-qty {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+  }
+  select#pos-type { text-transform: capitalize; }
+  #pos-symbol { text-transform: uppercase; }
+  select#pos-type:focus, #pos-symbol:focus, #pos-qty:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px var(--teal-soft, #DDEBE5);
+  }
+  .qty-input-group { display: flex; }
+  .qty-input-group #pos-qty { flex: 1; min-width: 0; border-radius: 3px 0 0 3px; }
+  #qty-mode-toggle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    width: 34px;
+    border: 1px solid var(--line);
+    border-left: none;
+    border-radius: 0 3px 3px 0;
+    background: var(--paper);
+    color: var(--teal);
+    cursor: pointer;
+  }
+  #qty-mode-toggle:hover { background: var(--teal-soft, #DDEBE5); }
+  #add-position-btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 3px;
+    background: var(--teal);
+    color: #fff;
+    cursor: pointer;
+  }
+  #add-position-btn:hover { opacity: 0.88; }
+
+  .position-list { margin-bottom: 16px; }
+  .position-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 90px 100px 100px 32px;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 4px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .position-row:first-child { border-top: 1px solid var(--line); }
+  .pos-type-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 7px;
+    border-radius: 3px;
+    text-align: center;
+    background: var(--paper);
+    color: var(--ink-soft);
+  }
+  .pos-type-badge.etf { background: var(--teal-soft, #DDEBE5); color: var(--teal); }
+  .pos-symbol-cell { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .pos-shares-cell { font-family: 'IBM Plex Mono', monospace; text-align: right; color: var(--ink-faint); font-size: 12px; }
+  .pos-amount-cell { font-family: 'IBM Plex Mono', monospace; text-align: right; color: var(--ink-soft); }
+  .pos-gain-cell { font-family: 'IBM Plex Mono', monospace; text-align: right; font-size: 12px; }
+  .pos-gain-cell.good { color: var(--status-good); }
+  .pos-gain-cell.critical { color: var(--status-critical); }
+  .pos-remove-btn {
+    background: none; border: none; cursor: pointer; color: var(--ink-faint);
+    font-size: 16px; line-height: 1; padding: 4px;
+  }
+  .pos-remove-btn:hover { color: var(--accent); }
+  .empty-portfolio-msg {
+    font-size: 14px; color: var(--ink-faint); padding: 20px 4px; text-align: center;
+    border: 1px dashed var(--line); border-radius: 4px; margin-bottom: 16px;
+  }
+
+  .action-row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .btn-secondary {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: var(--ink); }
+  .btn-primary-teal {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 3px;
+    background: var(--teal);
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn-primary-teal:hover { opacity: 0.88; }
+  .save-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--teal);
+    align-self: center;
+  }
+
+  .pie-block {
+    display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+    margin: 4px 0 28px;
+  }
+  .pie-chart-wrap { flex: 0 0 auto; }
+  .pie-chart {
+    position: relative;
+    width: 160px; height: 160px; border-radius: 50%;
+  }
+  .pie-chart-hole {
+    position: absolute; inset: 0; margin: auto;
+    width: 84px; height: 84px; border-radius: 50%;
+    background: var(--card);
+  }
+  .pie-legend { flex: 1 1 220px; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
+  .pie-legend-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .pie-legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
+  .pie-legend-symbol { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--ink); }
+  .pie-legend-name { color: var(--ink-faint); font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pie-legend-weight { font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); }
+  .pie-slice-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--card);
+    padding: 1px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .import-panel {
+    background: var(--card); border: 1px dashed var(--line); border-radius: 4px;
+    padding: 16px 20px; margin-top: 20px;
+  }
+  .import-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 4px;
+  }
+  .import-sub { font-size: 13px; color: var(--ink-faint); margin: 0 0 12px; line-height: 1.5; }
+  .import-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .import-row input[type="file"] { font-size: 13px; flex: 1; min-width: 200px; }
+
+  .source-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    margin-left: 6px;
+  }
 </style>
 </head>
 <body>
@@ -147,7 +359,7 @@
     <div class="chip-row" id="chip-row"></div>
   </div>
 
-  <div class="stamp">Live data via Financial Modeling Prep &middot; cached 1hr per ticker</div>
+  <div class="stamp">Live data via Yahoo Finance &middot; cached 1hr per ticker</div>
 
   <div class="error-box" id="error-box">
     <div class="title" id="error-title"></div>
@@ -184,7 +396,120 @@
     <div id="holding-list"></div>
 
     <div class="footnote">
-      Data from the Financial Modeling Prep API via a local backend at <code>/api/holdings</code>, so your API key never reaches the browser.
+      Data from Yahoo Finance via a local backend at <code>/api/holdings</code>.
+    </div>
+  </div>
+
+  <div class="section-divider">
+    <div class="section-eyebrow">Portfolio</div>
+    <h2>Build your holdings</h2>
+    <p class="section-sub">Add ETFs and individual stocks with a dollar amount each &mdash; it's converted to a share count at today's price. Save it, then see your true stock concentration (revalued at live prices each time) once ETF holdings are unpacked and combined.</p>
+
+    <div class="add-position-panel">
+      <div class="add-row">
+        <select id="pos-type">
+          <option value="etf">ETF</option>
+          <option value="stock">Stock</option>
+        </select>
+        <input id="pos-symbol" type="text" placeholder="Ticker" maxlength="8" autocomplete="off" spellcheck="false">
+        <div class="qty-input-group">
+          <input id="pos-qty" type="number" placeholder="Amount ($)" min="0" step="any">
+          <button type="button" id="qty-mode-toggle" title="Switch to entering share count">$</button>
+        </div>
+        <button id="add-position-btn">Add</button>
+      </div>
+    </div>
+
+    <div class="position-list" id="position-list"></div>
+
+    <div class="action-row">
+      <button class="btn-primary-teal" id="save-portfolio-btn">Save portfolio</button>
+      <button class="btn-secondary" id="view-concentration-btn">View stock concentration</button>
+      <span class="save-status" id="save-status"></span>
+    </div>
+
+    <div class="import-panel">
+      <div class="import-label">Import from broker files</div>
+      <p class="import-sub">E*TRADE brokerage positions CSV, and/or a Stock Plan "By Benefit Type (expanded)" .xlsx (ESPP + RSU holdings).</p>
+      <div class="import-row">
+        <input type="file" id="import-files" accept=".csv,.xlsx" multiple>
+        <button class="btn-secondary" id="import-parse-btn">Parse files</button>
+      </div>
+    </div>
+
+    <div id="import-preview" style="display:none; margin-top: 16px;">
+      <div class="manifest-label">
+        <span>Parsed positions</span>
+        <span>Shares</span>
+      </div>
+      <div id="import-preview-list"></div>
+      <div class="footnote" id="import-warnings"></div>
+      <div class="action-row" style="margin-top: 12px;">
+        <button class="btn-primary-teal" id="import-add-btn">Add to portfolio</button>
+        <button class="btn-secondary" id="import-replace-btn">Replace portfolio</button>
+        <button class="btn-secondary" id="import-cancel-btn">Cancel</button>
+      </div>
+    </div>
+
+    <div class="error-box" id="portfolio-error-box">
+      <div class="title" id="portfolio-error-title"></div>
+      <div class="body" id="portfolio-error-body"></div>
+    </div>
+
+    <div id="concentration-results" style="display:none; margin-top: 28px;">
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-label">Portfolio value</div>
+          <div class="stat-value" id="conc-total-value"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Unique stocks</div>
+          <div class="stat-value" id="conc-unique-count"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Top 10 weight</div>
+          <div class="stat-value" id="conc-top10"></div>
+        </div>
+      </div>
+
+      <div class="stat-row" id="conc-gain-row" style="grid-template-columns: 1fr 1fr;">
+        <div class="stat">
+          <div class="stat-label">Gain/loss since you started</div>
+          <div class="stat-value" id="conc-gain-dollar"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Return</div>
+          <div class="stat-value" id="conc-gain-percent"></div>
+        </div>
+      </div>
+      <p class="section-note" id="conc-gain-note"></p>
+
+      <div class="manifest-label">
+        <span>Your holdings</span>
+        <span>Weight</span>
+      </div>
+      <p class="section-note">What you actually hold, position by position &mdash; ETFs and funds counted as one line each, not unpacked.</p>
+      <div class="pie-block">
+        <div class="pie-chart-wrap">
+          <div class="pie-chart" id="pie-chart-holdings"><div class="pie-chart-hole"></div></div>
+        </div>
+        <div class="pie-legend" id="pie-legend-holdings"></div>
+      </div>
+
+      <div class="manifest-label" style="margin-top: 8px;">
+        <span>Aggregate stock exposure</span>
+        <span>Weight</span>
+      </div>
+      <p class="section-note">Every ETF and fund unpacked to its underlying stocks and combined with direct holdings &mdash; your true concentration in any one company.</p>
+      <div class="pie-block">
+        <div class="pie-chart-wrap">
+          <div class="pie-chart" id="pie-chart"><div class="pie-chart-hole"></div></div>
+        </div>
+        <div class="pie-legend" id="pie-legend"></div>
+      </div>
+
+      <div id="concentration-list"></div>
+      <div class="footnote" id="conc-warnings"></div>
     </div>
   </div>
 
@@ -285,6 +610,534 @@ function escapeHtml(str) {
 
 btn.addEventListener('click', runSearch);
 input.addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+
+// ---- Portfolio builder ----
+let portfolio = [];
+
+const posTypeEl = document.getElementById('pos-type');
+const posSymbolEl = document.getElementById('pos-symbol');
+const posQtyEl = document.getElementById('pos-qty');
+const qtyModeToggle = document.getElementById('qty-mode-toggle');
+const positionListEl = document.getElementById('position-list');
+const saveStatusEl = document.getElementById('save-status');
+const portfolioErrorBox = document.getElementById('portfolio-error-box');
+const concentrationResults = document.getElementById('concentration-results');
+
+// Lets you add a position either as a dollar amount (converted to shares at
+// today's price) or as a share count directly.
+let qtyMode = 'dollars';
+
+function updateQtyModeUI() {
+  if (qtyMode === 'dollars') {
+    posQtyEl.placeholder = 'Amount ($)';
+    qtyModeToggle.textContent = '$';
+    qtyModeToggle.title = 'Switch to entering share count';
+  } else {
+    posQtyEl.placeholder = 'Shares';
+    qtyModeToggle.textContent = '#';
+    qtyModeToggle.title = 'Switch to entering dollar amount';
+  }
+}
+updateQtyModeUI();
+
+qtyModeToggle.addEventListener('click', () => {
+  qtyMode = qtyMode === 'dollars' ? 'shares' : 'dollars';
+  updateQtyModeUI();
+  posQtyEl.value = '';
+  posQtyEl.focus();
+});
+
+// Gain/loss is a status encoding (good/critical), not identity -- reuses the
+// reserved status colors, never the categorical pie palette.
+function formatGainCell(gainDollar, gainPercent) {
+  if (typeof gainDollar !== 'number' || typeof gainPercent !== 'number') {
+    return '<span class="pos-gain-cell">—</span>';
+  }
+  const sign = gainDollar >= 0 ? '+' : '';
+  const statusClass = gainDollar >= 0 ? 'good' : 'critical';
+  return `<span class="pos-gain-cell ${statusClass}">${sign}${gainPercent.toFixed(1)}%</span>`;
+}
+
+function renderPositionList() {
+  positionListEl.innerHTML = '';
+  if (portfolio.length === 0) {
+    positionListEl.innerHTML = '<div class="empty-portfolio-msg">No positions yet. Add an ETF or stock above.</div>';
+    return;
+  }
+  portfolio.forEach((pos, idx) => {
+    const row = document.createElement('div');
+    row.className = 'position-row';
+    const sharesLabel = typeof pos.shares === 'number'
+      ? pos.shares.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' sh'
+      : '—';
+    const valueLabel = typeof pos.value === 'number'
+      ? '$' + pos.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : '—';
+    const gainCell = formatGainCell(pos.gainDollar, pos.gainPercent);
+    row.innerHTML = `
+      <span class="pos-type-badge ${pos.type === 'etf' ? 'etf' : ''}">${pos.type}${pos.label ? ' ' + escapeHtml(pos.label) : ''}</span>
+      <span class="pos-symbol-cell">${escapeHtml(pos.symbol)}</span>
+      <span class="pos-shares-cell">${sharesLabel}</span>
+      <span class="pos-amount-cell">${valueLabel}</span>
+      ${gainCell}
+      <button class="pos-remove-btn" data-idx="${idx}" title="Remove">&times;</button>
+    `;
+    positionListEl.appendChild(row);
+  });
+
+  positionListEl.querySelectorAll('.pos-remove-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      portfolio.splice(Number(b.dataset.idx), 1);
+      renderPositionList();
+    });
+  });
+}
+
+const addPositionBtn = document.getElementById('add-position-btn');
+
+addPositionBtn.addEventListener('click', async () => {
+  const type = posTypeEl.value;
+  const symbol = posSymbolEl.value.trim().toUpperCase();
+  const qty = parseFloat(posQtyEl.value);
+
+  hidePortfolioError();
+
+  if (!symbol) {
+    showPortfolioError('Missing ticker', 'Enter a ticker symbol before adding a position.');
+    return;
+  }
+  if (!qty || qty <= 0) {
+    showPortfolioError(
+      qtyMode === 'dollars' ? 'Missing amount' : 'Missing share count',
+      qtyMode === 'dollars' ? 'Enter a positive dollar amount for this position.' : 'Enter a positive number of shares for this position.'
+    );
+    return;
+  }
+
+  const originalText = addPositionBtn.textContent;
+  addPositionBtn.textContent = 'Adding…';
+  addPositionBtn.disabled = true;
+
+  try {
+    const resp = await fetch('/api/quote?ticker=' + encodeURIComponent(symbol));
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showPortfolioError(data.error || 'Lookup failed', data.message || `Couldn’t find a price for ${symbol}.`);
+      return;
+    }
+
+    const shares = qtyMode === 'dollars' ? qty / data.price : qty;
+    const value = shares * data.price;
+    portfolio.push({ type, symbol, shares, price: data.price, value });
+    posSymbolEl.value = '';
+    posQtyEl.value = '';
+    posSymbolEl.focus();
+    renderPositionList();
+  } catch (err) {
+    showPortfolioError('Network error', 'Couldn’t reach the local server.');
+  } finally {
+    addPositionBtn.textContent = originalText;
+    addPositionBtn.disabled = false;
+  }
+});
+
+posQtyEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('add-position-btn').click();
+});
+
+function showPortfolioError(title, body) {
+  document.getElementById('portfolio-error-title').textContent = title;
+  document.getElementById('portfolio-error-body').textContent = body;
+  portfolioErrorBox.style.display = 'block';
+}
+function hidePortfolioError() {
+  portfolioErrorBox.style.display = 'none';
+}
+
+document.getElementById('save-portfolio-btn').addEventListener('click', async () => {
+  hidePortfolioError();
+  saveStatusEl.textContent = 'Saving\u2026';
+  try {
+    const resp = await fetch('/api/portfolio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ positions: portfolio })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showPortfolioError(data.error || 'Save failed', data.message || 'Something went wrong.');
+      saveStatusEl.textContent = '';
+      return;
+    }
+    saveStatusEl.textContent = `Saved ${data.count} position${data.count === 1 ? '' : 's'}`;
+    setTimeout(() => { saveStatusEl.textContent = ''; }, 3000);
+  } catch (err) {
+    showPortfolioError('Network error', 'Couldn\u2019t reach the local server.');
+    saveStatusEl.textContent = '';
+  }
+});
+
+document.getElementById('view-concentration-btn').addEventListener('click', async () => {
+  hidePortfolioError();
+  concentrationResults.style.display = 'none';
+
+  if (portfolio.length === 0) {
+    showPortfolioError('Empty portfolio', 'Add and save some positions first.');
+    return;
+  }
+
+  const viewBtn = document.getElementById('view-concentration-btn');
+  const originalText = viewBtn.textContent;
+  viewBtn.textContent = 'Calculating\u2026';
+  viewBtn.disabled = true;
+
+  try {
+    // Save first so the server calculation reflects what's currently in the list.
+    await fetch('/api/portfolio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ positions: portfolio })
+    });
+
+    const resp = await fetch('/api/portfolio/concentration');
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showPortfolioError(data.error || 'Calculation failed', data.message || 'Something went wrong.');
+      return;
+    }
+
+    // Pull the live price/value the server just computed for each position
+    // back into the on-screen list, so dollar amounts reflect today's prices.
+    // Matched by index (not symbol) since the same ticker can appear twice.
+    if (Array.isArray(data.positions)) {
+      data.positions.forEach((live, i) => {
+        if (portfolio[i] && typeof live.price === 'number') {
+          portfolio[i].price = live.price;
+          portfolio[i].value = live.value;
+          portfolio[i].gainDollar = live.gainDollar;
+          portfolio[i].gainPercent = live.gainPercent;
+        }
+      });
+      renderPositionList();
+    }
+
+    renderConcentration(data);
+  } catch (err) {
+    showPortfolioError('Network error', 'Couldn\u2019t reach the local server.');
+  } finally {
+    viewBtn.textContent = originalText;
+    viewBtn.disabled = false;
+  }
+});
+
+// Fixed hue order -- never cycled or reassigned by rank so a slice's color
+// stays tied to it, not to wherever it lands after a re-sort.
+const PIE_SLICE_COLORS = ['--pie-1', '--pie-2', '--pie-3', '--pie-4', '--pie-5', '--pie-6'];
+const PIE_MAX_SLICES = 6;
+const PIE_GAP_DEG = 1.2;
+const PIE_RADIUS_PX = 80;       // half of .pie-chart's 160px width
+const PIE_LABEL_RADIUS_PX = 61; // ring midpoint, between the 42px hole and 80px edge
+const PIE_MIN_LABEL_DEG = 20;   // slices thinner than this skip a direct label -- legend still has it
+
+function renderPieAndLegend(rows, chartElId, legendElId) {
+  const top = rows.slice(0, PIE_MAX_SLICES);
+  const rest = rows.slice(PIE_MAX_SLICES);
+  const otherWeight = rest.reduce((sum, r) => sum + r.weight, 0);
+
+  const slices = top.map((r, i) => ({
+    label: r.symbol,
+    name: r.name,
+    weight: r.weight,
+    color: `var(${PIE_SLICE_COLORS[i]})`
+  }));
+  if (otherWeight > 0.005) {
+    slices.push({
+      label: 'Other',
+      name: `${rest.length} smaller position${rest.length === 1 ? '' : 's'}`,
+      weight: otherWeight,
+      color: 'var(--pie-other)'
+    });
+  }
+
+  // Build the conic-gradient in weight-percent space (not raw degrees) so
+  // gaps and any under-100% remainder land exactly, with no color bleed.
+  // Slices wide enough to read also get a direct ticker label at their
+  // midpoint angle -- conic-gradient's 0deg is straight up, clockwise, which
+  // is exactly the convention sin/cos need for x/y placement below.
+  let cumulative = 0;
+  const stops = [];
+  const labels = [];
+  slices.forEach(s => {
+    const startDeg = cumulative * 3.6;
+    cumulative += s.weight;
+    const endDeg = cumulative * 3.6;
+    const gapEnd = Math.max(startDeg, endDeg - PIE_GAP_DEG);
+    stops.push(`${s.color} ${startDeg}deg ${gapEnd}deg`);
+    stops.push(`var(--card) ${gapEnd}deg ${endDeg}deg`);
+
+    if (endDeg - startDeg >= PIE_MIN_LABEL_DEG) {
+      const midRad = ((startDeg + endDeg) / 2) * Math.PI / 180;
+      labels.push({
+        text: s.label,
+        x: PIE_RADIUS_PX + PIE_LABEL_RADIUS_PX * Math.sin(midRad),
+        y: PIE_RADIUS_PX - PIE_LABEL_RADIUS_PX * Math.cos(midRad)
+      });
+    }
+  });
+  const finalDeg = cumulative * 3.6;
+  if (finalDeg < 360) {
+    stops.push(`var(--card) ${finalDeg}deg 360deg`);
+  }
+
+  const chartEl = document.getElementById(chartElId);
+  chartEl.style.background = `conic-gradient(${stops.join(', ')})`;
+  chartEl.querySelectorAll('.pie-slice-label').forEach(el => el.remove());
+  labels.forEach(l => {
+    const label = document.createElement('span');
+    label.className = 'pie-slice-label';
+    label.textContent = l.text;
+    label.style.left = l.x + 'px';
+    label.style.top = l.y + 'px';
+    chartEl.appendChild(label);
+  });
+
+  const legend = document.getElementById(legendElId);
+  legend.innerHTML = '';
+  slices.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'pie-legend-row';
+    row.innerHTML = `
+      <span class="pie-legend-swatch" style="background:${s.color}"></span>
+      <span class="pie-legend-symbol">${escapeHtml(s.label)}</span>
+      <span class="pie-legend-name">${escapeHtml(s.name)}</span>
+      <span class="pie-legend-weight">${s.weight.toFixed(1)}%</span>
+    `;
+    legend.appendChild(row);
+  });
+}
+
+// "Your holdings" -- one line per ticker you hold, with no ETF/fund
+// look-through (that's the aggregate exposure pie below). Positions are
+// merged by symbol here even though the same ticker can be split into
+// multiple cost-basis lots underneath (e.g. ESPP vs. RSU shares of the same
+// stock) -- lot-splitting is an accounting detail, not a second holding.
+function buildHoldingsRows(positions, totalValue) {
+  if (!(totalValue > 0)) return [];
+  const bySymbol = new Map();
+  positions
+    .filter(p => typeof p.value === 'number')
+    .forEach(p => {
+      bySymbol.set(p.symbol, (bySymbol.get(p.symbol) || 0) + p.value);
+    });
+  return Array.from(bySymbol.entries())
+    .map(([symbol, value]) => ({ symbol, name: symbol, weight: (value / totalValue) * 100 }))
+    .sort((a, b) => b.weight - a.weight);
+}
+
+function renderGainSummary(gain) {
+  const row = document.getElementById('conc-gain-row');
+  const note = document.getElementById('conc-gain-note');
+
+  if (!gain || gain.knownCount === 0) {
+    row.style.display = 'none';
+    note.textContent = 'No cost basis available yet -- import a broker CSV (it includes "Price Paid $") to see gain/loss.';
+    return;
+  }
+
+  row.style.display = 'grid';
+  const dollarEl = document.getElementById('conc-gain-dollar');
+  const percentEl = document.getElementById('conc-gain-percent');
+  const statusClass = gain.dollar >= 0 ? 'good' : 'critical';
+  const sign = gain.dollar >= 0 ? '+' : '-';
+
+  dollarEl.textContent = sign + '$' + Math.abs(gain.dollar).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  dollarEl.className = 'stat-value ' + statusClass;
+  percentEl.textContent = (gain.percent >= 0 ? '+' : '') + gain.percent.toFixed(1) + '%';
+  percentEl.className = 'stat-value ' + statusClass;
+
+  note.textContent = gain.unknownCount > 0
+    ? `Based on ${gain.knownCount} position${gain.knownCount === 1 ? '' : 's'} with known cost basis; ${gain.unknownCount} position${gain.unknownCount === 1 ? '' : 's'} (manually added, or RSU shares E*TRADE hasn't priced yet) excluded.`
+    : `Based on all ${gain.knownCount} positions.`;
+}
+
+function renderConcentration(data) {
+  document.getElementById('conc-total-value').textContent =
+    '$' + data.totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  document.getElementById('conc-unique-count').textContent = data.uniqueStockCount;
+  document.getElementById('conc-top10').textContent = data.top10Concentration.toFixed(1) + '%';
+
+  renderGainSummary(data.gain);
+
+  const holdingsRows = buildHoldingsRows(data.positions || [], data.totalValue);
+  renderPieAndLegend(holdingsRows, 'pie-chart-holdings', 'pie-legend-holdings');
+  renderPieAndLegend(data.rows, 'pie-chart', 'pie-legend');
+
+  const maxWeight = Math.max(...data.rows.map(r => r.weight), 0.01);
+  const list = document.getElementById('concentration-list');
+  list.innerHTML = '';
+
+  data.rows.slice(0, 30).forEach((r, i) => {
+    const sourcesLabel = r.sources.includes('direct') && r.sources.length === 1
+      ? 'direct'
+      : r.sources.filter(s => s !== 'direct').join(', ') + (r.sources.includes('direct') ? ' + direct' : '');
+    const row = document.createElement('div');
+    row.className = 'holding-row';
+    row.innerHTML = `
+      <div class="h-rank">${i + 1}</div>
+      <div class="h-ticker">${escapeHtml(r.symbol)}</div>
+      <div class="h-name">${escapeHtml(r.name)}<span class="source-tag">via ${escapeHtml(sourcesLabel)}</span></div>
+      <div class="h-bar-track"><div class="h-bar-fill" style="width:${(r.weight / maxWeight * 100).toFixed(0)}%"></div></div>
+      <div class="h-weight">${r.weight.toFixed(2)}%</div>
+    `;
+    list.appendChild(row);
+  });
+
+  const warningsEl = document.getElementById('conc-warnings');
+  warningsEl.textContent = data.warnings && data.warnings.length
+    ? 'Notes: ' + data.warnings.join(' \u2014 ')
+    : '';
+
+  concentrationResults.style.display = 'block';
+}
+
+// ---- Broker file import ----
+let importedPositions = [];
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]); // strip data: URL prefix
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+const importParseBtn = document.getElementById('import-parse-btn');
+const importPreview = document.getElementById('import-preview');
+const importPreviewList = document.getElementById('import-preview-list');
+const importWarningsEl = document.getElementById('import-warnings');
+
+importParseBtn.addEventListener('click', async () => {
+  hidePortfolioError();
+  const fileInput = document.getElementById('import-files');
+  const files = Array.from(fileInput.files || []);
+
+  if (files.length === 0) {
+    showPortfolioError('No files selected', 'Choose a brokerage CSV and/or Stock Plan .xlsx first.');
+    return;
+  }
+
+  const originalText = importParseBtn.textContent;
+  importParseBtn.textContent = 'Parsing…';
+  importParseBtn.disabled = true;
+
+  try {
+    const payloadFiles = await Promise.all(files.map(async file => {
+      const isXlsx = /\.xlsx$/i.test(file.name);
+      return {
+        name: file.name,
+        type: isXlsx ? 'xlsx' : 'csv',
+        content: isXlsx ? await readFileAsBase64(file) : await readFileAsText(file)
+      };
+    }));
+
+    const resp = await fetch('/api/portfolio/parse-import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: payloadFiles })
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showPortfolioError(data.error || 'Import failed', data.message || 'Something went wrong.');
+      return;
+    }
+
+    importedPositions = data.positions;
+    renderImportPreview(data.positions, data.warnings);
+  } catch (err) {
+    showPortfolioError('Network error', 'Couldn’t reach the local server.');
+  } finally {
+    importParseBtn.textContent = originalText;
+    importParseBtn.disabled = false;
+  }
+});
+
+function renderImportPreview(positions, warnings) {
+  importPreviewList.innerHTML = '';
+
+  if (positions.length === 0) {
+    importPreviewList.innerHTML = '<div class="empty-portfolio-msg">No positions found in the selected file(s).</div>';
+  }
+
+  positions.forEach(pos => {
+    const row = document.createElement('div');
+    row.className = 'position-row';
+    const costBasisLabel = typeof pos.costBasis === 'number'
+      ? 'cost $' + pos.costBasis.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : '—';
+    row.innerHTML = `
+      <span class="pos-type-badge ${pos.type === 'etf' ? 'etf' : ''}">${pos.type}${pos.label ? ' ' + escapeHtml(pos.label) : ''}</span>
+      <span class="pos-symbol-cell">${escapeHtml(pos.symbol)}<span class="source-tag">${escapeHtml(pos.source || '')}</span></span>
+      <span class="pos-shares-cell">${pos.shares.toLocaleString(undefined, { maximumFractionDigits: 4 })} sh</span>
+      <span class="pos-amount-cell">${costBasisLabel}</span>
+    `;
+    importPreviewList.appendChild(row);
+  });
+
+  importWarningsEl.textContent = warnings && warnings.length ? 'Notes: ' + warnings.join(' — ') : '';
+  importPreview.style.display = positions.length > 0 || (warnings && warnings.length) ? 'block' : 'none';
+}
+
+function toPortfolioPosition(p) {
+  return { type: p.type, symbol: p.symbol, shares: p.shares, costBasis: p.costBasis ?? null, label: p.label ?? null };
+}
+
+document.getElementById('import-add-btn').addEventListener('click', () => {
+  portfolio = portfolio.concat(importedPositions.map(toPortfolioPosition));
+  renderPositionList();
+  closeImportPreview();
+});
+
+document.getElementById('import-replace-btn').addEventListener('click', () => {
+  portfolio = importedPositions.map(toPortfolioPosition);
+  renderPositionList();
+  closeImportPreview();
+});
+
+document.getElementById('import-cancel-btn').addEventListener('click', closeImportPreview);
+
+function closeImportPreview() {
+  importedPositions = [];
+  importPreview.style.display = 'none';
+  document.getElementById('import-files').value = '';
+}
+
+async function loadSavedPortfolio() {
+  try {
+    const resp = await fetch('/api/portfolio');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    portfolio = Array.isArray(data.positions) ? data.positions : [];
+    renderPositionList();
+  } catch (err) {
+    // Silent fail on initial load; user can still build a fresh portfolio.
+  }
+}
+
+renderPositionList();
+loadSavedPortfolio();
 </script>
 </body>
 </html>
